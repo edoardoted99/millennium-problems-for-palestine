@@ -320,3 +320,85 @@ main { flex: 1 0 auto; }
 .live-pill { display: inline-flex; align-items: center; gap: 8px; }
 @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .pulse::after, .agent .dot { animation: none; } }
+
+/* ---- Living site: per-problem live line, cross-stitch progress, live panel ---- */
+.card-live { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); margin-top: 4px; }
+.card-live b { color: var(--ink); font-family: var(--serif); font-size: 1.15rem; }
+.stitches { display: block; margin: 6px 0 2px; overflow: visible; }
+.st .bg { fill: transparent; stroke: #d9d4c8; stroke-width: 1; }
+.st .x { stroke: #c9c3b5; stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.st-main .x { stroke: var(--red); }
+.st-main .bg { stroke: #f0b7bf; }
+.st-working .x { stroke: var(--green); animation: stitchpulse 1.4s ease-in-out infinite; }
+.st-working .bg { stroke: var(--green); }
+.st-checking .x, .st-accepted .x { stroke: var(--black); }
+.st-checking .bg { stroke: var(--black); stroke-dasharray: 2 2; }
+.st-proved .bg { fill: var(--green); stroke: var(--green); }
+.st-proved .x { stroke: var(--white); }
+.st-empty .bg { stroke-dasharray: 2 2; }
+.st-empty .x { stroke: transparent; }
+@keyframes stitchpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+.livepanel { display: grid; grid-template-columns: 1.3fr repeat(3, 1fr) 1.6fr; gap: 1px; background: #2a2a2a; border-radius: 6px; overflow: hidden; margin: 22px 0 6px; color: var(--white); }
+.livepanel > div { background: var(--black); padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.livepanel b { font-family: var(--serif); font-size: 2rem; line-height: 1; }
+.livepanel span { color: #b9b9b9; font-size: 0.85rem; }
+.lp-main { flex-direction: row !important; align-items: center; gap: 12px !important; }
+.lp-main b { font-size: 2.6rem; color: #6fd3a0; }
+.lp-main span:last-child { color: var(--white); font-size: 0.95rem; max-width: 9ch; line-height: 1.2; }
+.lp-spark .spark rect { fill: #6fd3a0; }
+.lp-spark .none { color: #8a8a8a; }
+.lp-note { color: var(--muted); margin: 6px 0 0; font-size: 0.92rem; }
+.pulse.idle { background: #8a8a8a; }
+@media (max-width: 860px) {
+  .livepanel { grid-template-columns: 1fr 1fr; }
+  .lp-main, .lp-spark { grid-column: span 2; }
+}
+@media (prefers-reduced-motion: reduce) { .st-working .x { animation: none; } }
+
+/* ---- Ticker, hero pill, progress, leaderboard ---- */
+.ticker { background: #1c1b19; color: #eee; font-size: 0.92rem; border-bottom: 1px solid #000; }
+.ticker .wrap { padding-top: 9px; padding-bottom: 9px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.ti-label { color: #f0b35a; font-weight: 700; }
+.ticker time { color: #9a9a9a; font-family: var(--mono); font-size: 0.8rem; }
+.ticker a { color: #f0b35a; font-weight: 600; }
+.pill { display: inline-flex; align-items: center; flex-wrap: wrap; background: var(--white); color: var(--ink); border-radius: 999px; margin: 0 0 22px; box-shadow: 0 4px 18px rgba(0,0,0,0.25); font-size: 0.92rem; overflow: hidden; }
+.pill-live { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; font-weight: 600; }
+.pill-live .pulse { width: 9px; height: 9px; }
+.pill-copy { font: inherit; font-weight: 600; background: transparent; border: 0; border-left: 1px solid var(--line); padding: 9px 14px; cursor: pointer; color: var(--ink); }
+.pill-copy:hover { background: #f1efe8; color: var(--green-dark); }
+.progress { color: var(--muted); font-size: 0.88rem; margin: 8px 0 0; }
+.progress b { color: var(--ink); }
+.mono { font-family: var(--mono); }
+
+.leaderboard h2 { font-family: var(--serif); }
+.lb-tabs { display: inline-flex; background: #e8e4da; border-radius: 999px; padding: 3px; margin: 8px 0 14px; }
+.lb-tabs button { font: inherit; font-size: 0.9rem; border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; cursor: pointer; color: var(--muted); }
+.lb-tabs button[aria-selected="true"] { background: var(--white); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.lb { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 760px; }
+.lb-row { display: grid; grid-template-columns: 28px 40px 1fr auto; align-items: center; gap: 12px; background: var(--white); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; }
+.rk { font-family: var(--mono); color: var(--muted); }
+.av { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--green); color: var(--white); font-weight: 700; font-size: 0.85rem; }
+.lb-row:nth-child(3n+2) .av { background: var(--black); }
+.lb-row:nth-child(3n) .av { background: var(--red); }
+.av.empty { background: transparent !important; border: 1.5px dashed #b9b4a8; }
+.lb-who { display: flex; flex-direction: column; min-width: 0; }
+.lb-who a { color: var(--ink); font-weight: 700; text-decoration: none; }
+.lb-who a:hover { color: var(--red); }
+.lb-sub { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; }
+.lb-score { font-family: var(--serif); font-size: 1.5rem; text-align: right; line-height: 1; }
+.lb-score small { display: block; font-family: var(--sans); font-size: 0.7rem; color: var(--muted); }
+.lb-you { background: transparent; border: 1.5px dashed #b9b4a8; }
+.lb-copy { font: inherit; font-weight: 700; background: var(--green); color: var(--white); border: 0; border-radius: 6px; padding: 9px 14px; cursor: pointer; }
+.lb-copy:hover { background: var(--black); }
+@media (max-width: 560px) {
+  .lb-row { grid-template-columns: 22px 34px 1fr; }
+  .lb-score, .lb-copy { grid-column: 2 / -1; justify-self: start; }
+  .av { width: 34px; height: 34px; }
+}
+
+.lb[hidden], [hidden] { display: none !important; }
+@media (max-width: 560px) {
+  .pill { border-radius: 12px; display: flex; flex-direction: column; align-items: stretch; max-width: 260px; }
+  .pill-copy { border-left: 0; border-top: 1px solid var(--line); text-align: left; }
+}

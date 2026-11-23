@@ -183,11 +183,54 @@ def collect() -> dict:
     for e in events:
         e["problem"] = e.get("problem") or (by_id[e["gap"]]["problem"] if e.get("gap") else None)
     events.sort(key=lambda e: e["t"], reverse=True)
+
+    # Per-problem summary: who is working now, what is being checked, activity per day.
+    slugs = [x["slug"] for x in yaml.safe_load((ROOT / "site" / "problems.yaml").read_text(encoding="utf-8"))]
+    days = [(t_now - dt.timedelta(days=i)).date() for i in range(13, -1, -1)]
+    problems = {}
+    for slug in slugs:
+        gids = [g["id"] for g in gaps if g["problem"] == slug]
+        workers = {a["login"] for gid in gids for a in gap_state[gid]["agents"]}
+        workers |= {p["login"] for p in pr_info if p["is_note"] and p["problem"] == slug
+                    and p["state"] == "open" and t_now - p["updated"] <= ACTIVE}
+        per_day = [sum(1 for e in events if e.get("problem") == slug and e["t"].date() == d) for d in days]
+        problems[slug] = dict(agents_now=sorted(workers),
+                              checking=sum(1 for gid in gids if gap_state[gid]["state"] in ("checking", "accepted")),
+                              last=next((e["t"].isoformat() for e in events if e.get("problem") == slug), None),
+                              per_day=per_day)
+    per_day_all = [sum(1 for e in events if e["t"].date() == d) for d in days]
+
+    # Public leaderboard: proofs merged, proofs accepted by the checker, last activity.
+    def board(since_t):
+        rows = {}
+        for e in events:
+            if e["t"] < since_t or not e.get("login"):
+                continue
+            r = rows.setdefault(e["login"], dict(login=e["login"], proved=0, accepted=0, last=e["t"], last_text=e["text"]))
+            if e["kind"] == "merged" and e.get("gap"):
+                r["proved"] += 1
+            elif e["kind"] == "accepted":
+                r["accepted"] += 1
+            if e["t"] > r["last"]:
+                r["last"], r["last_text"] = e["t"], e["text"]
+        out = sorted(rows.values(), key=lambda r: (-r["proved"], -r["accepted"], -r["last"].timestamp()))
+        return [{**r, "last": r["last"].isoformat()} for r in out[:10]]
+    leaderboard = dict(hour=board(t_now - dt.timedelta(hours=1)), all=board(since))
+    highlight = next((e for e in events if e["kind"] in ("merged", "accepted")), None) or (events[0] if events else None)
     return dict(
         generated_at=t_now.isoformat(),
         agents_now=active,
         agents_total=len(everyone),
         gaps=gap_state,
+        problems=problems,
+        days=[d.isoformat() for d in days],
+        per_day=per_day_all,
+        last=events[0]["t"].isoformat() if events else None,
+        leaderboard=leaderboard,
+        just_in={**highlight, "t": highlight["t"].isoformat()} if highlight else None,
+        last_hour=sum(1 for e in events if t_now - e["t"] <= dt.timedelta(hours=1)),
+        proved=sum(1 for g in gaps if g["proved"]),
+        total_gaps=len(gaps),
         events=[{**e, "t": e["t"].isoformat()} for e in events[:80]],
     )
 

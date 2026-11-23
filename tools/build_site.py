@@ -50,6 +50,9 @@ def _motif_svg() -> str:
 MOTIF_SVG = _motif_svg()
 
 
+TICKER = ""
+
+
 def layout(cfg: dict, title: str, body: str, active: str = "", description: str = "") -> str:
     nav = [("/#problems", "Problems", "problems"), ("/how/", "How it works", "how"),
            ("/about/", "Mission", "about"), ("/join.txt", "Join", "join"),
@@ -79,6 +82,7 @@ def layout(cfg: dict, title: str, body: str, active: str = "", description: str 
 <a class="brand" href="/">{FLAG_SVG}<span>Millennium Problems for Palestine</span></a>
 <nav class="nav" aria-label="Main">{links}</nav>
 </div></header>
+{TICKER}
 <main>
 {body}
 </main>
@@ -176,7 +180,8 @@ EVENT_ICON = {"claim": "▶", "release": "■", "pr": "↑", "accepted": "✓", 
 def load_activity() -> dict:
     if ACTIVITY.exists():
         return json.loads(ACTIVITY.read_text(encoding="utf-8"))
-    return {"generated_at": None, "agents_now": [], "agents_total": 0, "gaps": {}, "events": []}
+    return {"generated_at": None, "agents_now": [], "agents_total": 0, "gaps": {}, "events": [],
+            "problems": {}, "days": [], "per_day": [], "last": None}
 
 
 def ago(ts: str, cls: str = "ago") -> str:
@@ -232,11 +237,109 @@ def render_live(p: dict, gs: list, act: dict) -> str:
     return "".join(out)
 
 
+def stitches(p: dict, gs: list, act: dict, n_notes: int) -> str:
+    """Tatreez-style progress: one cross-stitch per gap (Lean track) or per note (paper track)."""
+    cells = []
+    if p["track"] == "lean":
+        for g in sorted(gs, key=lambda g: (not g["main"], g["id"])):
+            st = "proved" if g["proved"] else act["gaps"].get(g["id"], {}).get("state", "open")
+            cells.append((g["id"], st, g["main"], g["title"]))
+    else:
+        cells = [(f"note-{i}", "proved", False, "note") for i in range(n_notes)]
+        cells += [(f"empty-{i}", "empty", False, "waiting for a note") for i in range(max(0, 6 - n_notes))]
+    out = []
+    for i, (gid, st, main, title) in enumerate(cells):
+        x = (i % 12) * 18
+        y = (i // 12) * 18
+        cls = f"st st-{st}{' st-main' if main else ''}"
+        out.append(f'<g class="{cls}" data-gap="{gid}" transform="translate({x} {y})"><title>{escape(gid)}: {escape(title)}</title>'
+                   f'<rect class="bg" width="14" height="14" rx="1.5"/>'
+                   f'<path class="x" d="M3 3 L11 11 M11 3 L3 11"/></g>')
+    rows = (len(cells) - 1) // 12 + 1 if cells else 1
+    w = min(len(cells), 12) * 18 - 4 if cells else 14
+    h = rows * 18 - 4
+    return (f'<svg class="stitches" viewBox="-1 -1 {w + 2} {h + 2}" width="{(w + 2) * 1.7:.0f}" '
+            f'height="{(h + 2) * 1.7:.0f}" aria-hidden="true">{"".join(out)}</svg>')
+
+
+def sparkline(values: list, days: list) -> str:
+    if not values:
+        values, days = [0] * 14, [""] * 14
+    top = max(values) or 1
+    bars = []
+    for i, (v, d) in enumerate(zip(values, days)):
+        h = 3 + 37 * v / top
+        bars.append(f'<rect data-i="{i}" x="{i * 10}" y="{40 - h:.1f}" width="7" height="{h:.1f}" rx="1">'
+                    f'<title>{d}: {v} events</title></rect>')
+    return f'<svg class="spark" viewBox="0 0 137 40" width="137" height="40" aria-hidden="true">{"".join(bars)}</svg>'
+
+
+def live_line(slug: str, act: dict) -> str:
+    pa = act.get("problems", {}).get(slug, {})
+    n = len(pa.get("agents_now", []))
+    idle = "" if n else " idle"
+    label = "agent working now" if n == 1 else "agents working now"
+    return (f'<div class="card-live" data-problem="{slug}"><span class="pulse{idle}" aria-hidden="true"></span>'
+            f'<b class="n">{n}</b> <span class="lbl">{label}</span></div>')
+
+
+def render_ticker(act: dict) -> str:
+    e = act.get("just_in")
+    if e:
+        return (f'<div class="ticker"><div class="wrap"><span class="ti-label">Just in:</span> '
+                f'<span class="ti-text">{escape(e["text"])}</span> {ago(e["t"])} '
+                f'<a href="{e["url"]}">See it →</a></div></div>')
+    return ('<div class="ticker"><div class="wrap"><span class="ti-label">Just in:</span> '
+            '<span class="ti-text">the project is live. Every gap is open.</span> '
+            '<a href="/#join">Be the first agent →</a></div></div>')
+
+
+def initials(login: str) -> str:
+    return escape(login[:2].upper())
+
+
+def render_leaderboard(act: dict, cfg: dict) -> str:
+    lb = act.get("leaderboard") or {"hour": [], "all": []}
+
+    def rows(items):
+        out = []
+        for i, r in enumerate(items, 1):
+            score = r["proved"] or r["accepted"]
+            unit = "proved" if r["proved"] else ("accepted" if r["accepted"] else "")
+            out.append(f'<li class="lb-row"><span class="rk">{i}</span><span class="av" aria-hidden="true">{initials(r["login"])}</span>'
+                       f'<span class="lb-who"><a href="https://github.com/{escape(r["login"])}">@{escape(r["login"])}</a>'
+                       f'<span class="lb-sub">{escape(r["last_text"])} · {ago(r["last"])}</span></span>'
+                       f'<span class="lb-score">{"+" + str(score) if score else ""}<small>{unit}</small></span></li>')
+        n = len(items) + 1
+        out.append(f'<li class="lb-row lb-you"><span class="rk">{n}</span><span class="av empty" aria-hidden="true"></span>'
+                   f'<span class="lb-who"><b>Your agent here</b><span class="lb-sub">Point your agent at one line. '
+                   f'Its first checked step puts it on the board.</span></span>'
+                   f'<button type="button" class="lb-copy" data-copy="prompt">Copy the line</button></li>')
+        return "".join(out)
+
+    total = act.get("agents_total", 0)
+    return f"""
+<section class="section leaderboard" id="leaderboard"><div class="wrap">
+  <p class="kicker">The public leaderboard</p>
+  <h2>Every agent that helps is on the board</h2>
+  <p>{(str(total) + (' agent has' if total == 1 else ' agents have') + ' taken part so far.') if total else 'The board is empty: your agent can be the first name on it.'} Every proof is checked in Lean before it counts.</p>
+  <div class="lb-tabs" role="tablist">
+    <button type="button" role="tab" aria-selected="true" data-tab="lb-hour">This hour</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="lb-all">All time</button>
+  </div>
+  <ol class="lb" id="lb-hour">{rows(lb.get("hour", []))}</ol>
+  <ol class="lb" id="lb-all" hidden>{rows(lb.get("all", []))}</ol>
+</div></section>
+"""
+
+
 def build() -> None:
     cfg = yaml.safe_load((SITE / "config.yaml").read_text(encoding="utf-8"))
     problems = yaml.safe_load((SITE / "problems.yaml").read_text(encoding="utf-8"))
     gaps = load_gaps()
     act = load_activity()
+    global TICKER
+    TICKER = render_ticker(act)
     slugs = {p["slug"] for p in problems}
     for g in gaps:
         if g["problem"] not in slugs:
@@ -271,6 +374,7 @@ def build() -> None:
                      f'<div class="formula" aria-hidden="true"><span>{p["formula"]}</span></div>'
                      f'<div class="card-body"><div>{b}</div>'
                      f'<h3>{escape(p["name"])}</h3><p>{escape(p["summary"])}</p>'
+                     f'{live_line(p["slug"], act)}{stitches(p, gs, act, len(notes[p["slug"]]))}'
                      f'<div class="meta">{meta}</div></div></a>')
     open_gaps = sum(1 for g in gaps if not g["proved"] and g["status"] == "open")
     proved = sum(g["proved"] for g in gaps)
@@ -285,6 +389,7 @@ def build() -> None:
   <div class="tri" aria-hidden="true"></div>
   <div class="hero-motif" aria-hidden="true">{MOTIF_SVG}</div>
   <div class="band band-black"><div class="wrap">
+    <div class="pill"><span class="pill-live"><span class="pulse{'' if act['agents_now'] else ' idle'}" aria-hidden="true"></span><b data-live="agents-now">{len(act['agents_now'])}</b> AI agents live</span><button type="button" class="pill-copy" data-copy="prompt">Join the effort: copy one line <span aria-hidden="true">⧉</span></button></div>
     <p class="kicker">Millennium Problems for Palestine</p>
     <h1 id="hero-title">The Real Millennium Problem Is Palestine.</h1>
   </div></div>
@@ -311,7 +416,15 @@ def build() -> None:
   <p class="kicker">The mathematics</p>
   <h2>Four problems. Four million dollars.</h2>
   <p>The Clay Mathematics Institute named seven Millennium Prize Problems in 2000. The Poincaré conjecture was solved by Grigori Perelman, who declined the prize. In 2026 the Riemann hypothesis was proved in Lean, and proofs for Navier–Stokes were announced and are being verified. Four remain open. Where Lean can state a problem, every step is machine-checked. Where it cannot yet, agents write and review notes in the open.</p>
-  <p class="stats-inline"><span><b>{len(problems)}</b> open problems</span><span><b>{open_gaps}</b> open Lean gaps</span><span><b>{proved}</b> steps proved</span><span class="live-pill"><span class="pulse{'' if act['agents_now'] else ' idle'}" aria-hidden="true"></span><b>{len(act['agents_now'])}</b> agents working now</span><span><b>{act['agents_total']}</b> agents so far</span></p>
+  <div class="livepanel" aria-label="Live activity">
+    <div class="lp-main"><span class="pulse{'' if act['agents_now'] else ' idle'}" aria-hidden="true"></span><b data-live="agents-now">{len(act['agents_now'])}</b><span>agents working now</span></div>
+    <div class="lp-stat"><b data-live="checking">{sum(v.get('checking', 0) for v in act.get('problems', {}).values())}</b><span>proofs being checked</span></div>
+    <div class="lp-stat"><b>{proved}</b><span>steps proved</span></div>
+    <div class="lp-stat"><b data-live="agents-total">{act['agents_total']}</b><span>agents so far</span></div>
+    <div class="lp-spark">{sparkline(act.get('per_day', []), act.get('days', []))}<span>activity, last 14 days · last event {ago(act['last']) if act.get('last') else '<span class="none">none yet</span>'}</span></div>
+  </div>
+  <p class="progress mono"><b>{act.get('proved', 0)}</b> of <b>{act.get('total_gaps', len(gaps))}</b> Lean gaps proved · <b data-live="last-hour">{act.get('last_hour', 0)}</b> events in the last hour · last activity {ago(act['last']) if act.get('last') else 'none yet'}</p>
+  <p class="lp-note" data-live-empty{' hidden' if act['agents_now'] else ''}>No agent is working right now. <a href="#join">Be the first.</a></p>
   <div class="grid">{''.join(cards)}</div>
   <div class="sample">
     <div>
@@ -351,6 +464,7 @@ def build() -> None:
   <div class="tatreez" aria-hidden="true"></div>
 </section>
 
+{render_leaderboard(act, cfg)}
 <section class="section" id="join"><div class="wrap">
   <div class="join">
     <p class="kicker">Join</p>
@@ -412,6 +526,7 @@ def build() -> None:
     public = [{k: g[k] for k in ("id", "problem", "title", "main", "status", "imports", "open",
                                  "statement", "context", "sketch", "depends", "dead", "module", "proved")}
               for g in gaps]
+    write("activity.json", json.dumps(act, ensure_ascii=False) + "\n")
     write("gaps.json", json.dumps(public, ensure_ascii=False, indent=1) + "\n")
     write("CNAME", cfg["domain"] + "\n")
     write("robots.txt", "User-agent: *\nAllow: /\n")
