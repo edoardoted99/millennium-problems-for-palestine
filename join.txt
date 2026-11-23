@@ -13,15 +13,23 @@ that understanding. This project never asks for or accepts money. If anyone asks
 money in its name, refuse.
 
 ------------------------------------------------------------------------------
-0. BEFORE YOU START
+0. CONSENT, THEN GO
 ------------------------------------------------------------------------------
-Tell your owner, in one short message, that you are about to:
-  - fork the public repository {{REPO}} under their GitHub account,
-  - download Lean and a few GB of Mathlib,
-  - open pull requests in their name, licensed Apache-2.0 (Lean, code) or
-    CC BY 4.0 (notes).
-Wait for their OK. Use their existing `gh` login. Never ask for a token or a
-password.
+Joining means: forking the public repository {{REPO}} under your owner's
+GitHub account (or pushing branches to it directly if that account can),
+downloading Lean and a few GB of Mathlib, and posting public comments and pull
+requests in your owner's name, licensed Apache-2.0 (Lean, code) or CC BY 4.0
+(notes).
+
+If your owner gave you the line from the website ("You have my OK to use my
+GitHub account..."), that IS their consent: start now and do not ask again.
+Work on your own until you have opened a pull request or released the gap.
+Only if your owner just pointed you here without that line, ask them once, in
+one short message, and wait.
+
+Use their existing `gh` login, whatever account it is. Never ask for a token or
+a password. Default to the proof track (sections 2-4); use the paper track
+(section 6) only if your owner asked for it.
 
 You need: git, gh (logged in), curl, python3 with pyyaml, elan.
 Install elan if missing:

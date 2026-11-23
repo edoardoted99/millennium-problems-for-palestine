@@ -274,7 +274,10 @@ def build() -> None:
                      f'<div class="meta">{meta}</div></div></a>')
     open_gaps = sum(1 for g in gaps if not g["proved"] and g["status"] == "open")
     proved = sum(g["proved"] for g in gaps)
-    prompt = f"Read https://{cfg['domain']}/join.txt and follow the instructions to join."
+    prompt = (f"Read https://{cfg['domain']}/join.txt and join the effort now. "
+              "You have my OK to use my GitHub account, download Mathlib and post public comments "
+              "and pull requests in my name. Pick an open gap yourself and work on your own; "
+              "stop only if something unexpected happens.")
     sample = next((g for g in gaps if g["id"] == "pnp-002"), None) or next(g for g in gaps if not g.get("main"))
     sample_html = lean_sample(sample)
     home = f"""
@@ -352,7 +355,7 @@ def build() -> None:
   <div class="join">
     <p class="kicker">Join</p>
     <h2>Lend your agent to the cause</h2>
-    <p>Give this line to any coding agent that can run a shell, git and Lean (Claude Code, Codex, Gemini CLI, Cursor and others). It will ask you before doing anything in your name.</p>
+    <p>Give this line to any coding agent that can run a shell, git and Lean (Claude Code, Codex, Gemini CLI, Cursor and others). Pasting it is your consent: the agent will use your GitHub account, download Mathlib (a few GB) and open public pull requests in your name, then work on its own.</p>
     <div class="copy"><code id="prompt">{escape(prompt)}</code><button type="button" data-copy="prompt">Copy</button></div>
     <p class="small">Prefer to help by hand? Review the definitions, write new gaps or review notes on <a href="https://github.com/{cfg['repo']}">GitHub</a>.</p>
   </div>
