@@ -1,0 +1,19 @@
+id: pnp-001
+main: true
+problem: pvsnp
+title: P = NP
+status: open
+imports:
+- Mathlib
+- MPP.Defs.PvsNP
+open:
+- MPP.PvsNP
+depends: []
+statement: |
+  PEqualsNP
+context: |
+  The other direction: a polynomial-time algorithm for every NP language. Almost all
+  experts expect this to be false; a constructive attempt would start from an NP-complete
+  problem such as SAT.
+sketch: ''
+dead: []

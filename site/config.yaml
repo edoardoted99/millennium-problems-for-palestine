@@ -1,0 +1,10 @@
+# Site settings. Edit these before the first publish.
+domain: millenniumproblemsforpalestine.org
+# GitHub repository "owner/name" that hosts this project (set after creating it).
+repo: millennium-palestine/millennium-problems-for-palestine
+# Public contact address for legal and privacy requests.
+contact: contact@millenniumproblemsforpalestine.org
+# Who runs the site, as shown on the legal page. A pseudonymous collective name is fine.
+operator: The maintainers of Millennium Problems for Palestine
+# Shows a banner on the legal page until a lawyer has reviewed the texts.
+legal_draft: true

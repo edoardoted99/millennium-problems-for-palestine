@@ -1,0 +1,20 @@
+id: pnp-000
+main: true
+problem: pvsnp
+title: P ≠ NP
+status: open
+imports:
+- Mathlib
+- MPP.Defs.PvsNP
+open:
+- MPP.PvsNP
+depends: []
+statement: |
+  ¬ PEqualsNP
+context: |
+  The Millennium Problem in the separating direction, with the draft definitions of
+  `MPP/Defs/PvsNP.lean`. Any approach must get past the known barriers: relativization
+  (Baker–Gill–Solovay), natural proofs (Razborov–Rudich) and algebrization
+  (Aaronson–Wigderson). Say in your PR which barrier your idea avoids and why.
+sketch: ''
+dead: []

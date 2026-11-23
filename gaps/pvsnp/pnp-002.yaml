@@ -1,0 +1,18 @@
+id: pnp-002
+problem: pvsnp
+title: P is contained in NP
+status: open
+imports:
+- Mathlib
+- MPP.Defs.PvsNP
+open:
+- MPP.PvsNP
+depends: []
+statement: |
+  ∀ L : Lang, InP L → InNP L
+context: |
+  Sanity check of the definitions: a machine for L gives a verifier that ignores the
+  witness. The work is building a TM2 machine that strips the pair encoding and composing
+  polynomial-time machines in Mathlib's `Turing.FinTM2` framework.
+sketch: ''
+dead: []

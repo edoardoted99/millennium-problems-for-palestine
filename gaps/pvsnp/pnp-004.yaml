@@ -1,0 +1,18 @@
+id: pnp-004
+problem: pvsnp
+title: P is closed under complement
+status: open
+imports:
+- Mathlib
+- MPP.Defs.PvsNP
+open:
+- MPP.PvsNP
+depends:
+- pnp-006
+statement: |
+  ∀ L : Lang, InP L → InP (fun x => !L x)
+context: |
+  Run the machine for L, then flip the output bit. Follows from composition
+  (gap pnp-006) with a machine that negates one bit.
+sketch: ''
+dead: []

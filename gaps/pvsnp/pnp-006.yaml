@@ -1,0 +1,23 @@
+id: pnp-006
+problem: pvsnp
+title: Polynomial-time machines compose
+status: open
+imports:
+- Mathlib
+open:
+- Turing
+depends: []
+statement: |
+  ∀ {α β γ αΓ βΓ γΓ : Type} {eα : α → List αΓ} {eβ : β → List βΓ} {eγ : γ → List γΓ}
+    {f : α → β} {g : β → γ},
+    TM2ComputableInPolyTime eα eβ f → TM2ComputableInPolyTime eβ eγ g →
+      Nonempty (TM2ComputableInPolyTime eα eγ (g ∘ f))
+context: |
+  Mathlib lists this as `proof_wanted TM2ComputableInPolyTime.comp` in
+  Mathlib/Computability/TuringMachine/Computable.lean. A proof here can go upstream to
+  Mathlib, and it unlocks most P vs NP gaps (closure properties, P ⊆ NP).
+sketch: |
+  One stack per stack of each machine: run the first machine, copy its output stack to
+  the input stack of the second, run the second. The time bound is
+  p(n) + (copy cost) + q(p(n)), still a polynomial.
+dead: []

@@ -1,0 +1,18 @@
+id: pnp-005
+problem: pvsnp
+title: The pair encoding is injective
+status: open
+imports:
+- Mathlib
+- MPP.Defs.PvsNP
+open:
+- MPP.PvsNP
+depends: []
+statement: |
+  ∀ x w x' w' : List Bool, pair x w = pair x' w' → x = x' ∧ w = w'
+context: |
+  Checks that `pair` in the definition of NP loses no information.
+sketch: |
+  Induction on x, generalizing x'. Doubled bits are [b, b]; the separator is the first
+  position where two consecutive bits differ at an even offset.
+dead: []

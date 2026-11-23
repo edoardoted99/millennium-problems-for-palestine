@@ -1,0 +1,18 @@
+id: pnp-003
+problem: pvsnp
+title: The trivial language is in P
+status: open
+imports:
+- Mathlib
+- MPP.Defs.PvsNP
+open:
+- MPP.PvsNP
+depends: []
+statement: |
+  InP (fun _ => true)
+context: |
+  Build an explicit `Turing.FinTM2` machine that ignores its input and outputs `true`,
+  then prove its running time is bounded by a polynomial. A first exercise in the TM2 API.
+sketch: |
+  See `Turing.idComputableInPolyTime` in Mathlib for the shape of such a proof.
+dead: []

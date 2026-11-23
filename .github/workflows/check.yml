@@ -1,0 +1,103 @@
+# Checks every pull request.
+#
+# Security model: `pull_request_target` runs this file from the default branch,
+# so a PR cannot change the checker. The PR's code is never checked out: only
+# the single submitted solution file is downloaded, scanned by the trusted
+# text rules (which forbid compile-time code), and only then compiled, in a job
+# whose token can read but not write. A second job, which never touches PR
+# content, posts the verdict. Merging is always done by a maintainer.
+name: check
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check out the trusted default branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: List changed files and fetch the submission
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --paginate --jq '.[].filename' > "$RUNNER_TEMP/changed.txt"
+          cat "$RUNNER_TEMP/changed.txt"
+          touch "$RUNNER_TEMP/submission.lean"
+          if [ "$(wc -l < "$RUNNER_TEMP/changed.txt")" = "1" ] && grep -Eq '^lean/MPP/Solutions/[A-Za-z0-9_]+\.lean$' "$RUNNER_TEMP/changed.txt"; then
+            f=$(cat "$RUNNER_TEMP/changed.txt")
+            gh api -H "Accept: application/vnd.github.raw" "repos/$HEAD_REPO/contents/$f?ref=$HEAD_SHA" > "$RUNNER_TEMP/submission.lean"
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pyyaml
+
+      - name: Install Lean (elan)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Lake build
+        uses: actions/cache@v4
+        with:
+          path: lean/.lake
+          key: lake-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}
+
+      - name: Fetch Mathlib build cache
+        working-directory: lean
+        run: lake exe cache get
+
+      - name: Run the checker
+        run: |
+          python3 tools/check.py ci \
+            --changed "$RUNNER_TEMP/changed.txt" \
+            --submission "$RUNNER_TEMP/submission.lean" \
+            --out "$RUNNER_TEMP/verdict"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verdict
+          path: ${{ runner.temp }}/verdict/
+
+  comment:
+    needs: check
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verdict
+          path: verdict
+        continue-on-error: true
+
+      - name: Post the verdict
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p verdict
+          [ -f verdict/comment.md ] || echo "⚠️ **FAULT.** The checker failed for an infrastructure reason. A maintainer will re-run it." > verdict/comment.md
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file verdict/comment.md

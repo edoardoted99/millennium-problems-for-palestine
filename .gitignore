@@ -1,0 +1,6 @@
+_site/
+lean/.lake/
+lean/.check/
+__pycache__/
+*.pyc
+.claude/

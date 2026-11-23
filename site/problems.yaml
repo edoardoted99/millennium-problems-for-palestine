@@ -1,0 +1,84 @@
+# The five open Millennium Prize Problems, in the order shown on the site.
+# track: lean  -> gaps are Lean statements checked automatically
+#        paper -> no faithful Lean statement exists yet; notes under notes/<slug>/
+- slug: pvsnp
+  # Trusted HTML, shown large on the card and the problem page.
+  formula: 'P <span class="rel">≟</span> NP'
+  name: P versus NP
+  track: lean
+  clay: https://www.claymath.org/millennium-problems/
+  summary: >-
+    If a solution to a problem can be checked quickly, can it also be found quickly?
+  statement: >-
+    "Quickly" means in time bounded by a polynomial in the size of the input. P is the class
+    of problems solvable that fast; NP is the class whose solutions can be verified that fast.
+    Most researchers expect P ≠ NP, but no proof exists in either direction.
+  lean: >-
+    Draft definitions of P and NP, built on Mathlib's multi-stack Turing machines, are in
+    lean/MPP/Defs/PvsNP.lean. They need review by complexity theorists before any result
+    stated with them means anything.
+
+- slug: navier-stokes
+  # Trusted HTML, shown large on the card and the problem page.
+  formula: '∂<sub><i>t</i></sub><i>u</i> + (<i>u</i>·∇)<i>u</i> = ν Δ<i>u</i> − ∇<i>p</i>,<br>∇·<i>u</i> = 0'
+  name: Navier–Stokes existence and smoothness
+  track: paper
+  clay: https://www.claymath.org/millennium-problems/
+  summary: >-
+    Do the equations of fluid flow in three dimensions always have smooth solutions?
+  statement: >-
+    Starting from a smooth velocity field with finite energy, does a smooth solution of the
+    three-dimensional incompressible Navier–Stokes equations exist for all time, or can it
+    blow up in finite time? A proof of either answer solves the problem.
+  lean: >-
+    No faithful Lean statement exists yet. Writing one, with the function spaces it needs,
+    is the first goal of this track.
+
+- slug: yang-mills
+  # Trusted HTML, shown large on the card and the problem page.
+  formula: 'spec <i>H</i> ⊂ {0} ∪ [Δ, ∞),<br>Δ &gt; 0'
+  name: Yang–Mills existence and mass gap
+  track: paper
+  clay: https://www.claymath.org/millennium-problems/
+  summary: >-
+    Construct a quantum Yang–Mills theory in four dimensions and show its lightest particle
+    has positive mass.
+  statement: >-
+    For every compact simple gauge group, prove that a quantum Yang–Mills theory exists on
+    four-dimensional space-time, satisfying axioms at least as strong as those of
+    constructive quantum field theory, and that it has a mass gap Δ > 0.
+  lean: >-
+    Not formalizable today: the problem asks to construct a quantum field theory, and the
+    framework it needs does not yet exist in any proof assistant.
+
+- slug: hodge
+  # Trusted HTML, shown large on the card and the problem page.
+  formula: 'H<sup>2<i>k</i></sup>(<i>X</i>, ℚ) ∩ H<sup><i>k</i>,<i>k</i></sup>(<i>X</i>)<br>= ⟨[<i>Z</i>]⟩<sub>ℚ</sub>'
+  name: The Hodge conjecture
+  track: paper
+  clay: https://www.claymath.org/millennium-problems/
+  summary: >-
+    On smooth projective complex varieties, every Hodge class comes from algebraic cycles.
+  statement: >-
+    On a non-singular complex projective variety, every Hodge class is a rational linear
+    combination of classes of algebraic subvarieties. Loosely: certain shapes that
+    topology sees are always built from shapes cut out by polynomial equations.
+  lean: >-
+    Mathlib does not yet have Hodge theory or algebraic cycles on complex projective
+    varieties. Formalizing the statement is a long-term goal.
+
+- slug: bsd
+  # Trusted HTML, shown large on the card and the problem page.
+  formula: 'rank <i>E</i>(ℚ)<br>= ord<sub><i>s</i>=1</sub> <i>L</i>(<i>E</i>, <i>s</i>)'
+  name: Birch and Swinnerton-Dyer conjecture
+  track: paper
+  clay: https://www.claymath.org/millennium-problems/
+  summary: >-
+    The number of independent rational points on an elliptic curve is read off its L-function.
+  statement: >-
+    For an elliptic curve E over the rationals, the rank of the group E(ℚ) equals the order
+    of vanishing of its L-function L(E, s) at s = 1. Known when that order is 0 or 1
+    (Gross–Zagier, Kolyvagin); open in general.
+  lean: >-
+    Mathlib has elliptic curves but not yet their L-functions. Partial formalization steps
+    are welcome as notes, and as Lean gaps once the statement can be written.
