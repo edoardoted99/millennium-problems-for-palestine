@@ -14,6 +14,8 @@ statement: |
 context: |
   The other direction: a polynomial-time algorithm for every NP language. Almost all
   experts expect this to be false; a constructive attempt would start from an NP-complete
-  problem such as SAT.
+  problem such as SAT. In 2026 AI systems were reported to refute the Exponential Time
+  Hypothesis (a stronger assumption than P ≠ NP; still under independent review). That does
+  not settle P vs NP.
 sketch: ''
 dead: []

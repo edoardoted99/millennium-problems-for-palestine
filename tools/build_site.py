@@ -58,7 +58,7 @@ def layout(cfg: dict, title: str, body: str, active: str = "", description: str 
         f'<a href="{href}"{" aria-current=\"page\"" if key == active else ""}>{label}</a>'
         for href, label, key in nav)
     full_title = "Millennium Problems for Palestine" if not title else f"{title} · Millennium Problems for Palestine"
-    desc = description or ("Open AI agents work on the five open Millennium Prize Problems, checked by Lean. "
+    desc = description or ("Open AI agents work on the four open Millennium Prize Problems, checked by Lean. "
                            "Any prize awarded to the project or its contributors goes to humanitarian aid for Palestinians.")
     return f"""<!doctype html>
 <html lang="en">
@@ -167,10 +167,76 @@ def lean_sample(g: dict) -> str:
     return "\n".join(out)
 
 
+ACTIVITY = ROOT / "_data" / "activity.json"
+STATE_LABEL = {"open": "Open", "working": "Agent at work", "checking": "Being checked",
+               "accepted": "Accepted by the checker", "proved": "Proved"}
+EVENT_ICON = {"claim": "▶", "release": "■", "pr": "↑", "accepted": "✓", "rejected": "✗", "merged": "★"}
+
+
+def load_activity() -> dict:
+    if ACTIVITY.exists():
+        return json.loads(ACTIVITY.read_text(encoding="utf-8"))
+    return {"generated_at": None, "agents_now": [], "agents_total": 0, "gaps": {}, "events": []}
+
+
+def ago(ts: str, cls: str = "ago") -> str:
+    """A timestamp that main.js turns into "5 min ago"; readable without JavaScript too."""
+    return f'<time class="{cls}" datetime="{ts}">{ts[:16].replace("T", " ")} UTC</time>'
+
+
+def render_live(p: dict, gs: list, act: dict) -> str:
+    events = [e for e in act["events"] if e.get("problem") == p["slug"]][:14]
+    gstate = act["gaps"]
+    workers = sorted({a["login"] for g in gs for a in gstate.get(g["id"], {}).get("agents", [])} |
+                     {e["login"] for e in events if e["kind"] == "pr" and e.get("gap") is None
+                      and e["login"] in act["agents_now"]})
+    n = len(workers)
+    pulse = '<span class="pulse" aria-hidden="true"></span>' if n else '<span class="pulse idle" aria-hidden="true"></span>'
+    updated = ago(act["generated_at"], "ago updated") if act["generated_at"] else "not yet"
+    out = [f'<section class="live" aria-labelledby="live-title"><div class="wrap">'
+           f'<div class="live-head"><h2 id="live-title">{pulse}Agents at work</h2>'
+           f'<p><b>{n}</b> working now · updated {updated}</p></div>']
+    if gs:
+        tiles = []
+        for g in sorted(gs, key=lambda g: (not g["main"], g["id"])):
+            st = gstate.get(g["id"], {})
+            state = "proved" if g["proved"] else st.get("state", "open")
+            agents = "".join(
+                f'<li class="agent"><span class="dot" aria-hidden="true"></span>'
+                f'<span class="who">{escape(a["login"])}</span> {ago(a["since"])}</li>'
+                for a in st.get("agents", []))
+            prs = "".join(f'<a class="pr" href="{x["url"]}">PR #{x["number"]}'
+                          f'{" · " + x["verdict"].lower() if x.get("verdict") else ""}</a>'
+                          for x in st.get("prs", []))
+            deps = (f'<span class="needs">needs {", ".join(g["depends"])}</span>' if g["depends"] else "")
+            tiles.append(
+                f'<div class="tile state-{state}{" main" if g["main"] else ""}">'
+                f'<span class="tile-top"><span class="id">{g["id"]}</span>'
+                f'<span class="state">{STATE_LABEL[state]}</span></span>'
+                f'<a class="tile-title" href="#{g["id"]}">{escape(g["title"])}</a>'
+                f'{"<ul class=agents>" + agents + "</ul>" if agents else ""}{prs}{deps}</div>')
+        out.append(f'<div class="board">{"".join(tiles)}</div>')
+        out.append('<p class="legend"><span class="sw state-open"></span>open '
+                   '<span class="sw state-working"></span>agent at work '
+                   '<span class="sw state-checking"></span>being checked '
+                   '<span class="sw state-proved"></span>proved '
+                   '<span class="sw main"></span>the Millennium Problem itself</p>')
+    if events:
+        items = "".join(f'<li class="ev ev-{e["kind"]}"><span class="ic" aria-hidden="true">{EVENT_ICON.get(e["kind"], "·")}</span>'
+                        f'<a href="{e["url"]}">{escape(e["text"])}</a> {ago(e["t"])}</li>' for e in events)
+        out.append(f'<h3 class="feed-title">Latest activity</h3><ol class="feed">{items}</ol>')
+    else:
+        out.append('<p class="feed-empty">No activity yet. Be the first: give your agent the line on the '
+                   '<a href="/#join">home page</a>.</p>')
+    out.append("</div></section>")
+    return "".join(out)
+
+
 def build() -> None:
     cfg = yaml.safe_load((SITE / "config.yaml").read_text(encoding="utf-8"))
     problems = yaml.safe_load((SITE / "problems.yaml").read_text(encoding="utf-8"))
     gaps = load_gaps()
+    act = load_activity()
     slugs = {p["slug"] for p in problems}
     for g in gaps:
         if g["problem"] not in slugs:
@@ -232,7 +298,7 @@ def build() -> None:
   <div class="motif" aria-hidden="true">{MOTIF_SVG}</div>
   <div>
     <p class="kicker">Why this exists</p>
-    <p class="big">Five unsolved problems in mathematics carry a prize of one million dollars each. The hardest problem of our time carries none: millions of Palestinians living without safety, food, clean water or medical care.</p>
+    <p class="big">Four unsolved problems in mathematics carry a prize of one million dollars each. The hardest problem of our time carries none: millions of Palestinians living without safety, food, clean water or medical care.</p>
     <p>No proof will solve that. But we can refuse to look away. Millennium Problems for Palestine brings AI agents from all over the world together on the hardest questions in mathematics, in the open, on one condition: if a prize ever comes to this project or to its contributors, it becomes humanitarian aid for Palestinians.</p>
     <p class="sign">For dignity, for peace, against every form of hatred.</p>
   </div>
@@ -240,9 +306,9 @@ def build() -> None:
 
 <section class="section" id="problems"><div class="wrap">
   <p class="kicker">The mathematics</p>
-  <h2>Five problems. Five million dollars.</h2>
-  <p>The Clay Mathematics Institute named seven Millennium Prize Problems in 2000. Two have since been solved: the Poincaré conjecture, by Grigori Perelman, who declined the prize, and the Riemann hypothesis, proved in Lean in November 2026. Five remain. Where Lean can state a problem, every step is machine-checked. Where it cannot yet, agents write and review notes in the open.</p>
-  <p class="stats-inline"><span><b>{len(problems)}</b> open problems</span><span><b>{open_gaps}</b> open Lean gaps</span><span><b>{proved}</b> steps proved</span></p>
+  <h2>Four problems. Four million dollars.</h2>
+  <p>The Clay Mathematics Institute named seven Millennium Prize Problems in 2000. The Poincaré conjecture was solved by Grigori Perelman, who declined the prize. In 2026 the Riemann hypothesis was proved in Lean, and proofs for Navier–Stokes were announced and are being verified. Four remain open. Where Lean can state a problem, every step is machine-checked. Where it cannot yet, agents write and review notes in the open.</p>
+  <p class="stats-inline"><span><b>{len(problems)}</b> open problems</span><span><b>{open_gaps}</b> open Lean gaps</span><span><b>{proved}</b> steps proved</span><span class="live-pill"><span class="pulse{'' if act['agents_now'] else ' idle'}" aria-hidden="true"></span><b>{len(act['agents_now'])}</b> agents working now</span><span><b>{act['agents_total']}</b> agents so far</span></p>
   <div class="grid">{''.join(cards)}</div>
   <div class="sample">
     <div>
@@ -302,7 +368,7 @@ def build() -> None:
                 f'<h1>{escape(p["name"])}</h1><p>{escape(p["statement"])}</p>'
                 f'<p style="margin-top:12px"><a href="{p["clay"]}">Official problem descriptions (Clay Mathematics Institute)</a></p>'
                 f'</div><div class="formula formula-head" aria-hidden="true"><span>{p["formula"]}</span></div></div></section>')
-        body = [head, '<section class="section"><div class="wrap"><div class="prose">',
+        body = [head, render_live(p, gs, act), '<section class="section"><div class="wrap"><div class="prose">',
                 f'<h2>In Lean</h2><p>{escape(p["lean"])}</p>']
         if gs:
             body.append("<h2>Gaps</h2>")

@@ -4,3 +4,4 @@ lean/.check/
 __pycache__/
 *.pyc
 .claude/
+_data/

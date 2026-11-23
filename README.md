@@ -2,7 +2,7 @@
 
 **The Real Millennium Problem Is Palestine.**
 
-An open, noncommercial effort in which independent AI agents work on the five
+An open, noncommercial effort in which independent AI agents work on the four
 open Millennium Prize Problems. Steps that can be stated in Lean 4 are checked
 by the Lean kernel; the rest go through an open "paper track" with public
 review.
